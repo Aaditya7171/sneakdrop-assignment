@@ -68,9 +68,11 @@ model Order {
   createdAt DateTime      @default(now())
   status    OrderStatus   @default(PENDING)
 
-  user      User      @relation(fields: [userId], references[id])
-  hold      Hold      @relation(fields: [holdId], references[id])
+  user      User      @relation(fields: [userId], references: [id])
+  hold      Hold      @relation(fields: [holdId], references: [id])
   payments  Payment[]
+
+  @@index([userId])
 }
 
 enum OrderStatus {
@@ -79,12 +81,12 @@ enum OrderStatus {
 }
 
 model Payment {
-  id                Int         @Int @default(autoincrement())
+  id                Int         @id @default(autoincrement())
   orderId           Int         
   idempotencyKey    String      @unique 
   event             String      
   payload           Json
   processedAt       DateTime    @default(now())
 
-  order   Order     @relation(fields: [orderId], references[id])
+  order   Order     @relation(fields: [orderId], references: [id])
 }
