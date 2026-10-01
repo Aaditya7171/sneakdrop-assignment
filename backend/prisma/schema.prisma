@@ -8,6 +8,83 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+
+  holds           Hold[]
+  orders          Order[]
+  waitlistEntry   waitlistEntry?
+}
+
+model Inventory {
+  id        Int @id 
+  total     Int @default(20)
+  available Int @default(20)
+}
+
+model Hold {
+  id          Int         @id @default(autoincrement())
+  userId      Int           
+  createdAt   DateTime    @default(now())
+  expiresAt   DateTime
+  status      HoldStatus  @default(ACTIVE)
+
+  user      User    @relation(fields: [userId], references: [id])
+  order     Order?
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
+
+enum HoldStatus {
+  ACTIVE
+  EXPIRED
+  CONVERTED
+}
+
+model waitlistEntry {
+  id          Int                @id @default(autoincrement())
+  userId      Int                @unique
+  createdAt   DateTime           @default(now())
+  status      WaitListStatus     @default(WAITING)
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+enum WaitListStatus {
+  WAITING
+  PROMOTED
+  CANCELLED
+}
+
+model Order {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  holdId    Int           @unique
+  createdAt DateTime      @default(now())
+  status    OrderStatus   @default(PENDING)
+
+  user      User      @relation(fields: [userId], references[id])
+  hold      Hold      @relation(fields: [holdId], references[id])
+  payments  Payment[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+}
+
+model Payment {
+  id                Int         @Int @default(autoincrement())
+  orderId           Int         
+  idempotencyKey    String      @unique 
+  event             String      
+  payload           Json
+  processedAt       DateTime    @default(now())
+
+  order   Order     @relation(fields: [orderId], references[id])
 }
