@@ -37,3 +37,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+.agents
+.claude
+.cursor
+.devin
