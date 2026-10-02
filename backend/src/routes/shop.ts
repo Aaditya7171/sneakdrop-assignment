@@ -1,48 +1,47 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
+import { error } from "node:console";
 
 export const shopRouter = Router();
 
 shopRouter.use(requireAuth);
 
 shopRouter.post("/buy", async (req, res) => {
-    // handle active hold
     const userId = req.user!.id;
-    const existingHold = await prisma.hold.findFirst({
-        where: {
-            userId,
-            status: "ACTIVE",
-        },
-    });
 
-    if (existingHold) {
-        res.status(400).json({
-            error: "you have an active hold already, pay for it or wait for 5 mins.",
-            holdExpiresAt: existingHold.expiresAt,
-        });
-        return;
-    }
-    // max purchases = 2 handling
-    const paidOrderCount = await prisma.order.count({
-        where: {
-            userId,
-            status: "PAID",
-        },
-    });
-
-    if (paidOrderCount >= 2) {
-        res.status(400).json({
-            error: "You have already purchased the maximum of 2 pairs.",
-        });
-        return;
-    }
-
-    // atomic hold
     try {
         const hold = await prisma.$transaction(async (tx) => {
-            const rows = await tx.$queryRaw<{ available: number }[]>
-                `SELECT available FROM "Inventory" where id = 1 FOR UPDATE`;
+
+            await tx.$executeRaw`
+                SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`
+
+            // handle concurrent holds (shouldn't be)
+            const existingHold = await tx.hold.findFirst({
+                where: {
+                    userId,
+                    status: "ACTIVE",
+                    expiresAt: { gt: new Date() },
+                },
+            });
+
+            if (existingHold) {
+                throw new Error("ALREADY_HAS_HOLD");
+            }
+
+            // control max purchases = 2
+            const paidOrderCount = await tx.order.count({
+                where: { userId, status: "PAID" },
+            })
+
+            if (paidOrderCount >= 2) {
+                throw new Error("MAX_PURCHASES_REACHED");
+            }
+
+            // inventory check + decrement
+            const rows = await tx.$queryRaw< { available: number }[]>`
+                SELECT available FROM "Inventory" WHERE id = 1 FOR UDPATE
+            `;
 
             const inventory = rows[0];
 
@@ -78,6 +77,24 @@ shopRouter.post("/buy", async (req, res) => {
             if (err.message === "Out of Stock") {
                 res.status(409).json({
                     error: "No stock available. You can join the waiting list.",
+                });
+                return;
+            }
+            if (err.message === "MAX_PURCHASES_REACHED") {
+                res.status(400).json({
+                    error: "You have already purchased the max pairs.",
+                });
+                return;
+            }
+            if (err.message === "ALREADY_HAS_HOLD") {
+                res.status(400).json({
+                    error: "You already have an active hold, pay or wait.",
+                });
+                return;
+            }
+            if (err.message === "INVENTORY_NOT_FOUND - Maybe forgot to seed.") {
+                res.status(500).json({
+                    error: "Inventory not initialized - forgot to run seed?",
                 });
                 return;
             }
