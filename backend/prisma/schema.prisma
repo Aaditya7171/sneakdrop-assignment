@@ -34,7 +34,7 @@ model Hold {
   user      User    @relation(fields: [userId], references: [id])
   order     Order?
 
-  @@index([status, createdAt])
+  @@index([status, expiresAt])
   @@index([userId])
 }
 

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { authRouter } from "./routes/auth.js"
 
 const app = express();
 app.use(cors());
@@ -10,5 +11,7 @@ app.get("/health", (req, res) => {
         status: "ok",
     });
 });
+
+app.use("/auth", authRouter);
 
 export default app;
