@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
-import { error } from "node:console";
 
 export const shopRouter = Router();
 
@@ -40,7 +39,7 @@ shopRouter.post("/buy", async (req, res) => {
 
             // inventory check + decrement
             const rows = await tx.$queryRaw< { available: number }[]>`
-                SELECT available FROM "Inventory" WHERE id = 1 FOR UDPATE
+                SELECT available FROM "Inventory" WHERE id = 1 FOR UPDATE
             `;
 
             const inventory = rows[0];

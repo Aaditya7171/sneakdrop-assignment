@@ -24,7 +24,7 @@ export async function expireHold() {
                     SELECT id, "userId"
                     FROM "waitlistEntry"
                     WHERE status = 'WAITING' ORDER BY
-                    "createdAit" ASC LIMIT 1
+                    "createdAt" ASC LIMIT 1
                     FOR UPDATE SKIP LOCKED
                 `;
 
@@ -32,7 +32,7 @@ export async function expireHold() {
                     const next = waiting[0];
 
                     await tx.$executeRaw`
-                        UPDATE "waitlistEntry" SET status = "PROMOTED" WHERE id = ${next.id}
+                        UPDATE "waitlistEntry" SET status = 'PROMOTED' WHERE id = ${next.id}
                         `;
 
                     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
@@ -47,7 +47,7 @@ export async function expireHold() {
                 }
                 else {
                     await tx.$executeRaw`
-                    UPDATE "INVENTORY" SET available = available + 1 WHERE id = 1
+                    UPDATE "Inventory" SET available = available + 1 WHERE id = 1
                     `;
 
                     console.log(`[cron] Hold ${hold.id} expired -> pair returned to inventory`);

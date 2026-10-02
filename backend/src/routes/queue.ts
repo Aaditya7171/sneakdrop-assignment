@@ -41,6 +41,7 @@ queueRouter.post("/join", async (req, res) => {
 
     if (alreadyWaiting && alreadyWaiting?.status === "WAITING") {
         res.status(400).json({ error: "You are already in the queue.." });
+        return;
     }
 
     const entry = await prisma.waitlistEntry.upsert({

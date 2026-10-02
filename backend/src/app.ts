@@ -16,6 +16,6 @@ app.get("/health", (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/shop", shopRouter);
-app.use("queue", queueRouter);
+app.use("/queue", queueRouter);
 
 export default app;
