@@ -4,6 +4,7 @@ import { HoldCard } from "@/components/drop/HoldCard";
 import { QueueCard } from "@/components/drop/QueueCard";
 import { ActionBar } from "@/components/drop/ActionBar";
 import { Separator } from "@/components/ui/separator";
+import { useEffect } from "react";
 import * as api from "@/lib/api";
 
 type Props = {
@@ -13,6 +14,12 @@ type Props = {
 
 export function DropPage({ token, onLogout }: Props) {
     const { data, error, refetch } = useStatus(token);
+
+    useEffect(() => {
+        if (error?.toLowerCase().includes("invalid") || error?.toLowerCase().includes("expired")) {
+            onLogout();
+        }
+    }, [error, onLogout]);
 
     async function handleBuy() {
         await api.buy(token);
