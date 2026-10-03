@@ -101,3 +101,86 @@ shopRouter.post("/buy", async (req, res) => {
         throw err;
     }
 })
+
+shopRouter.post("/pay", async (req, res) => {
+    const userId = req.user!.id;
+
+    const activeHold = await prisma.hold.findFirst({
+        where: {
+            userId,
+            status: "ACTIVE",
+            expiresAt: { gt: new Date() },
+        },
+    });
+
+    if (!activeHold) {
+        res.status(400).json({
+            error: "No active hold found, Buy first"
+        });
+        return;
+    }
+
+    const existingOrder = await prisma.order.findUnique({
+        where: { holdId: activeHold.id },
+    });
+
+    if (!existingOrder) {
+        res.status(400).json({
+            error: "Payment already initiated for this hold.."
+        });
+        return;
+    }
+
+    const order = await prisma.order.create({
+        data: {
+            userId,
+            holdId: activeHold.id,
+            status: "PENDING",
+        },
+    });
+
+    fireFakeWebhook(order.id);
+
+    res.status(202).json({
+        message: "Payment initiated, waiting for confirmation",
+        orderId: order.id,
+    });
+});
+
+function fireFakeWebhook(orderId: number) {
+    const idemKey = `evt_order_${orderId}_${Date.now()}`;
+    const port = process.env.PORT ?? 5000;
+    const webhookUrl = `http"//localhost:${port}/payment/webhook`;
+
+    const payload = JSON.stringify({
+        orderId,
+        event: "payment.succeeded",
+        idemKey,
+    })
+
+    const delay = Math.random() < 0.3 ? 2000 : 100; // 30% chance of 2s delay - 100ms otherwise
+
+    setTimeout(async () => {
+        try {
+            console.log(`[fake-payment] firing webhook for order: ${orderId} after: ${delay}ms..`);
+
+            await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: payload,
+            })
+
+            if (Math.random() < 0.2) {
+                console.log(`[fake-payment] sending DUPLICATE webhook for order: ${orderId}.`);
+
+                await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: { "ContentType": "application/json" },
+                    body: payload,
+                });
+            }
+        } catch (err) {
+            console.error(`[fake-payment] Failed to deliver wEbhook for order ${orderId}:`, err);
+        }
+    }, delay);
+}
