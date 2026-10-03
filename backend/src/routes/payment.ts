@@ -57,6 +57,11 @@ paymentRouter.post("/webhook", async (req, res) => {
                 data: { status: "PAID" },
             });
 
+            await tx.hold.update({
+                where: { id: order.holdId },
+                data: { status: "CONVERTED" },
+            });
+
             await tx.payment.create({
                 data: { orderId: order.id, idempotencyKey, event, payload: req.body }
             });

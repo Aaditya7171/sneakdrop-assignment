@@ -64,6 +64,9 @@ shopRouter.post("/buy", async (req, res) => {
                 },
             });
             return hold;
+        }, {
+            maxWait: 5000,
+            timeout: 10000,
         });
 
         res.status(201).json({
@@ -124,7 +127,7 @@ shopRouter.post("/pay", async (req, res) => {
         where: { holdId: activeHold.id },
     });
 
-    if (!existingOrder) {
+    if (existingOrder) {
         res.status(400).json({
             error: "Payment already initiated for this hold.."
         });
@@ -150,12 +153,12 @@ shopRouter.post("/pay", async (req, res) => {
 function fireFakeWebhook(orderId: number) {
     const idemKey = `evt_order_${orderId}_${Date.now()}`;
     const port = process.env.PORT ?? 5000;
-    const webhookUrl = `http"//localhost:${port}/payment/webhook`;
+    const webhookUrl = `http://localhost:${port}/payment/webhook`;
 
     const payload = JSON.stringify({
         orderId,
         event: "payment.succeeded",
-        idemKey,
+        idempotencyKey: idemKey,
     })
 
     const delay = Math.random() < 0.3 ? 2000 : 100; // 30% chance of 2s delay - 100ms otherwise
@@ -175,7 +178,7 @@ function fireFakeWebhook(orderId: number) {
 
                 await fetch(webhookUrl, {
                     method: "POST",
-                    headers: { "ContentType": "application/json" },
+                    headers: { "Content-Type": "application/json" },
                     body: payload,
                 });
             }
