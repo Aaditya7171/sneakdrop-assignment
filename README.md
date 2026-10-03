@@ -1,5 +1,10 @@
-# Sneaker Drop
+# SneakerDrop
+**Live links:**
+- Frontend: [https://sneakdrop-hq.vercel.app](https://sneakdrophq.vercel.app)
+- Backend: [https://sneakdrophq-api.onrender.com](https://sneakdrophq-api.onrender.com)
+- Postman: [View API Documentation](https://documenter.getpostman.com/view/39185837/2sBYHNX3rK#18a163a0-df8c-493d-9be3-10de68975a36)
 
+# Assignment
 A small shoe brand is launching one limited sneaker. They only have 20 pairs. When the sale opens, thousands of people will click Buy at the same second.
 
 Last time, their website sold 51 pairs when they only had 20, and they had to refund 31 people. Your job is to build the full system for the next sale so this never happens again.
