@@ -1,6 +1,6 @@
 # SneakerDrop
 **Live links:**
-- Frontend: [https://sneakdrop-hq.vercel.app](https://sneakdrophq.vercel.app)
+- Frontend: [https://sneakdrop-hq.vercel.app](https://sneakdrop-hq.vercel.app)
 - Backend: [https://sneakdrop-assignment.onrender.com](https://sneakdrop-assignment.onrender.com)
 - Postman: [View API Documentation](https://documenter.getpostman.com/view/39185837/2sBYHNX3rK#18a163a0-df8c-493d-9be3-10de68975a36)
 
